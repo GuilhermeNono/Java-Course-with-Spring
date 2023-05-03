@@ -1,6 +1,10 @@
 package me.nono.firststeps.services;
 
+import me.nono.firststeps.data.vo.v1.PersonVO;
+import me.nono.firststeps.data.vo.v2.PersonVOV2;
 import me.nono.firststeps.exceptions.ResourceNotFoundException;
+import me.nono.firststeps.mapper.DozerMapper;
+import me.nono.firststeps.mapper.PersonMapper;
 import me.nono.firststeps.models.Person;
 import me.nono.firststeps.repositories.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,15 +23,26 @@ public class PersonService {
 
     @Autowired
     PersonRepository repository;
+    @Autowired
 
-    public Person create(Person person) {
+    PersonMapper personMapper;
+
+    public PersonVO create(PersonVO person) {
 
         logger.info("Creating one person!");
+        var entity = DozerMapper.parseObject(person, Person.class);
+        return DozerMapper.parseObject(repository.save(entity), PersonVO.class);
 
-        return repository.save(person);
     }
 
-    public Person update(Person person) {
+    public PersonVOV2 createV2(PersonVOV2 person) {
+
+        logger.info("Creating one person!");
+        var entity = personMapper.convertVoToEntity(person);
+        return personMapper.convertEntityToVo(repository.save(entity));
+    }
+
+    public PersonVO update(PersonVO person) {
 
         logger.info("Updating one person!");
 
@@ -38,8 +53,8 @@ public class PersonService {
         entity.setLastName(person.getLastName());
         entity.setGender(person.getGender());
         entity.setAddress(person.getAddress());
-
-        return repository.save(entity);
+        PersonVO personVO = DozerMapper.parseObject(repository.save(entity), PersonVO.class);
+        return personVO;
     }
 
     public void delete(Long id) {
@@ -50,18 +65,20 @@ public class PersonService {
         repository.delete(entity);
     }
 
-    public List<Person> findAll() {
+    public List<PersonVO> findAll() {
 
         logger.info("Finding all users!");
 
-        return repository.findAll();
+        return DozerMapper.parseListObjects(repository.findAll(), PersonVO.class);
     }
 
-    public Person findByID(Long id) {
+    public PersonVO findByID(Long id) {
 
         logger.info("Finding One person. ");
 
-        return repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No records found for this ID."));
+        Person person = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No records found for this ID."));
+
+        return DozerMapper.parseObject(person, PersonVO.class);
     }
 
 }
